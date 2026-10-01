@@ -14,3 +14,10 @@ example.test#@#.ad-slot
 ||popup.tracker.test^$popup
 ||a.com^/never-matches
 /only/$to=tracker.test
+||alias.tracker.test^$3p
+||alias.tracker.test^$third-party
+||wild.tracker.test/banners/*
+||scope.tracker.test^$domain=shop.test
+||scope.tracker.test^$domain=forum.test
+||disabled.tracker.test^
+||disabled.tracker.test^$badfilter

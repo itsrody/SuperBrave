@@ -18,6 +18,11 @@ pub struct BuildOutcome {
     pub repaired_equivalent: usize,
     pub repaired_behaviour_change: usize,
     pub deduped: usize,
+    /// Rules rewritten into an equivalent, cheaper form by the optimisation pass.
+    pub optimised_rewritten: usize,
+    /// Per-stage detail of the optimisation pass. A stage with `accepted: false`
+    /// changed a verdict and was discarded in full.
+    pub optimise_stages: Vec<crate::optimise::Stage>,
     pub catch_all_retained: usize,
     pub regex_rules: usize,
     /// Rules sampled by the self-consistency gate.
@@ -73,6 +78,19 @@ impl Report {
             ));
         }
         s.push_str(&format!("  deduplicated         {}\n", o.deduped));
+        if o.optimised_rewritten > 0 || o.optimise_stages.iter().any(|x| !x.accepted) {
+            s.push_str(&format!(
+                "  equivalent rewrites {}\n",
+                o.optimised_rewritten
+            ));
+            for stage in &o.optimise_stages {
+                let mark = if stage.accepted { "+" } else { "!" };
+                s.push_str(&format!(
+                    "    {mark} {:<28} -{} ~{}\n",
+                    stage.name, stage.removed, stage.rewritten
+                ));
+            }
+        }
         s.push_str(&format!(
             "  vs upstream          {} identical, {} gained, 0 lost\n",
             o.regression_identical, o.regression_gained
@@ -254,6 +272,31 @@ pub fn run(
         }
     }
 
+    // Stage 2b: rewrite rules that are already correct into an equivalent, cheaper
+    // form. Every stage proves itself against the rule set it replaced and is
+    // dropped if it changes a single verdict, so nothing unproven reaches the list.
+    let tuned = crate::optimise::optimise(merged);
+    let stages = tuned.stages.clone();
+    for stage in &stages {
+        if stage.accepted {
+            log::info!(
+                "optimise: {} removed {} rewrote {}",
+                stage.name,
+                stage.removed,
+                stage.rewritten
+            );
+        } else {
+            log::warn!(
+                "optimise: {} REJECTED ({} verdict changes); stage dropped",
+                stage.name,
+                stage.diffs
+            );
+        }
+    }
+    deduped += tuned.removed();
+    let optimised_rewritten = tuned.rewritten();
+    let merged = tuned.into_rules();
+
     // Stage 3: verify the merged list end to end.
     let mut net_text = String::with_capacity(merged.len() * 48);
     let mut cos_text = String::with_capacity(merged.len() * 64);
@@ -330,6 +373,8 @@ pub fn run(
                 network: n,
                 cosmetic: c,
                 deduped,
+                optimised_rewritten,
+                stages: &stages,
                 check,
                 regression: upstream,
                 started,
@@ -361,6 +406,8 @@ pub fn run(
             network: n,
             cosmetic: c,
             deduped,
+            optimised_rewritten,
+            stages: &stages,
             check,
             regression: upstream,
             started,
@@ -377,6 +424,8 @@ struct Totals<'a> {
     network: usize,
     cosmetic: usize,
     deduped: usize,
+    optimised_rewritten: usize,
+    stages: &'a [crate::optimise::Stage],
     check: crate::verify::SelfCheck,
     regression: crate::verify::Regression,
     started: Instant,
@@ -389,6 +438,8 @@ fn outcome_from(t: Totals<'_>) -> BuildOutcome {
         network,
         cosmetic,
         deduped,
+        optimised_rewritten,
+        stages,
         check,
         regression,
         started,
@@ -404,6 +455,8 @@ fn outcome_from(t: Totals<'_>) -> BuildOutcome {
             .filter(|a| a.origin == "repaired-changed")
             .count(),
         deduped,
+        optimised_rewritten,
+        optimise_stages: stages.to_vec(),
         catch_all_retained: parsed.iter().map(|p| p.catch_all).sum(),
         regex_rules: parsed.iter().map(|p| p.regex_rules).sum(),
         regression_identical: regression.identical,

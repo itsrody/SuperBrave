@@ -136,3 +136,63 @@ fn self_consistency_ratio_is_reported() {
     assert_eq!(report.outcome.self_consistency, 1.0);
     assert!(report.summary().contains("self-consistency"));
 }
+
+#[test]
+fn equivalent_rewrites_are_applied_and_reported() {
+    let dir = tempdir("optimise");
+    let list = build(&dir);
+    let cfg = fixture_config(&dir);
+    let report = superbrave::pipeline::run(
+        &cfg,
+        &dir.join("cache"),
+        &dir,
+        superbrave::pipeline::Options::default(),
+    )
+    .unwrap();
+
+    // `$3p` and `$third-party` are the same filter, so only one copy ships.
+    assert!(list.contains("||alias.tracker.test^$third-party"));
+    assert_eq!(
+        list.matches("||alias.tracker.test^").count(),
+        1,
+        "alias duplicate survived:\n{list}"
+    );
+    // A trailing wildcard is implied by a prefix match.
+    assert!(list.contains("||wild.tracker.test/banners/"), "{list}");
+    // A `$badfilter` pair cannot affect any request, so both halves go.
+    assert!(!list.contains("disabled.tracker.test"), "{list}");
+    // Two rules differing only in document scope become one.
+    assert!(
+        list.contains("||scope.tracker.test^$domain=shop.test|forum.test"),
+        "{list}"
+    );
+
+    assert!(report.outcome.optimised_rewritten > 0);
+    assert!(
+        report
+            .outcome
+            .optimise_stages
+            .iter()
+            .all(|s| s.accepted && s.diffs == 0),
+        "a stage was not proven equivalent: {:?}",
+        report.outcome.optimise_stages
+    );
+    assert!(report.summary().contains("equivalent rewrites"));
+}
+
+#[test]
+fn optimisation_never_costs_upstream_coverage() {
+    // The pipeline refuses to emit when a request blocked upstream is no longer
+    // blocked, so reaching a report at all is the coverage assertion.
+    let dir = tempdir("optimise-regression");
+    let cfg = fixture_config(&dir);
+    let report = superbrave::pipeline::run(
+        &cfg,
+        &dir.join("cache"),
+        &dir,
+        superbrave::pipeline::Options::default(),
+    )
+    .unwrap();
+    assert!(report.outcome.optimise_stages.iter().all(|s| s.accepted));
+    assert_eq!(report.outcome.self_consistency, 1.0);
+}
