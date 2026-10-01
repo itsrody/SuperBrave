@@ -130,6 +130,8 @@ fn self_consistency_ratio_is_reported() {
         superbrave::pipeline::Options::default(),
     )
     .unwrap();
+    assert_eq!(report.outcome.regression_gained, 0);
+    assert!(report.summary().contains("vs upstream"));
     assert!(report.outcome.verified_sampled > 0);
     assert_eq!(report.outcome.self_consistency, 1.0);
     assert!(report.summary().contains("self-consistency"));

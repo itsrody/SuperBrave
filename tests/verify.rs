@@ -42,3 +42,26 @@ fn check_reports_blocking_state() {
             .blocked
     );
 }
+
+#[test]
+fn regression_detects_a_lost_block() {
+    // Upstream blocks the host; the "built" list does not contain the rule.
+    let up = "||tracker.example.test^\n";
+    let built = compile("", "");
+    let r = superbrave::verify::regression_vs_upstream(up, &built);
+    // The corpus probes that host as script, xhr and image, so all three are lost.
+    assert_eq!(r.lost.len(), 3, "{r:?}");
+    assert!(r
+        .lost
+        .iter()
+        .all(|(u, _, _)| u.contains("tracker.example.test")));
+}
+
+#[test]
+fn regression_is_clean_when_nothing_is_removed() {
+    let text = "||tracker.example.test^\n||ads.example.test^\n||metrics.example.test^\n";
+    let built = compile(text, "");
+    let r = superbrave::verify::regression_vs_upstream(text, &built);
+    assert!(r.lost.is_empty(), "{r:?}");
+    assert!(r.identical > 0);
+}

@@ -337,3 +337,101 @@ fn document_source(options: &[&str]) -> Option<&'static str> {
     }
     Some("https://origin.invalid/")
 }
+
+/// A fixed request corpus spanning the request types the upstream lists target.
+pub fn probe_corpus() -> Vec<(String, String, String)> {
+    let mut v: Vec<(String, String, String)> = Vec::new();
+    let mut push = |u: String, s: &str, k: &str| v.push((u, s.to_string(), k.to_string()));
+    for (u, s, k) in [
+        (
+            "https://doubleclick.net/",
+            "https://news.example/",
+            "script",
+        ),
+        (
+            "https://ad.doubleclick.net/ddm/ad.js",
+            "https://a.example/",
+            "script",
+        ),
+        (
+            "https://www.google-analytics.com/analytics.js",
+            "https://shop.example/",
+            "script",
+        ),
+        (
+            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
+            "https://x.example/",
+            "script",
+        ),
+        (
+            "https://cdn.jsdelivr.net/npm/x@1.0.0/x.js",
+            "https://git.example/",
+            "script",
+        ),
+        ("https://example.com/", "https://news.example/", "document"),
+        (
+            "https://s3.amazonaws.com/ads/ad.js",
+            "https://y.example/",
+            "script",
+        ),
+        (
+            "https://static.hbstatic.com/ads.gif",
+            "https://z.example/",
+            "image",
+        ),
+        (
+            "https://cdn.matomo.cloud/piwik.js",
+            "https://w.example/",
+            "script",
+        ),
+        ("https://invisible.gif", "https://v.example/", "image"),
+    ] {
+        push(u.to_string(), s, k);
+    }
+    // A small blocklist whose hosts the sources do cover, to prove the built list
+    // is not simply inert.
+    for host in [
+        "ads.example.test",
+        "tracker.example.test",
+        "metrics.example.test",
+    ] {
+        for kind in ["script", "xhr", "image"] {
+            push(
+                format!("https://{host}/a.js"),
+                "https://shop.example/",
+                kind,
+            );
+        }
+    }
+    v
+}
+
+/// Result of comparing the built list against the raw upstream union.
+#[derive(Debug, Default, Clone)]
+pub struct Regression {
+    pub identical: usize,
+    pub gained: usize,
+    /// Requests the upstream lists block but the built list does not.
+    pub lost: Vec<(String, String, String)>,
+}
+
+/// Builds an engine from the untouched upstream text and compares blocking
+/// decisions against the built engine. SuperBrave only drops rules the engine
+/// rejects, so a lost block means the pipeline changed behaviour.
+pub fn regression_vs_upstream(upstream_text: &str, built: &Compiled) -> Regression {
+    let upstream = compile(upstream_text, "");
+    let mut r = Regression::default();
+    for (u, s, k) in probe_corpus() {
+        let Ok(req) = adblock::request::Request::new(&u, &s, &k, "get") else {
+            continue;
+        };
+        let up = upstream.engine.check_network_request(&req).filter.is_some();
+        let sb = built.engine.check_network_request(&req).filter.is_some();
+        match (up, sb) {
+            (true, false) => r.lost.push((u, s, k)),
+            (false, true) => r.gained += 1,
+            _ => r.identical += 1,
+        }
+    }
+    r
+}

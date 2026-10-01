@@ -43,9 +43,15 @@ https://raw.githubusercontent.com/itsrody/SuperBrave/main/SuperBrave.txt
    the rule's own pattern, and comparing outcomes against the original.
    `src/rewrite/mod.rs`.
 4. **Merge and dedupe.** Parallel per source, then first-wins on exact text.
-5. **Verify.** The merged list is compiled into a real engine, then sampled: each
-   sampled rule must block a request built from its own pattern. A build that
-   fails this gate is not written. `src/verify.rs`.
+5. **Verify.** Three gates, any of which refuses to emit:
+   - *Regression.* The built engine is compared against an engine built from the
+     untouched upstream union on a fixed request corpus. A request upstream blocks
+     but SuperBrave does not is a regression and fails the build. This is what
+     proves the pipeline only removes rules the engine cannot honour.
+   - *Self-consistency.* Sampled rules must block a request built from their own
+     pattern, which catches rules that parse but can never match.
+   - *Sample floor.* The self-consistency ratio must stay above 50%.
+   `src/verify.rs`.
 6. **Emit.** Header, split network/cosmetic sections, per-source JSON report.
 
 `--output-dir` defaults to the repo root so `SuperBrave.txt` lands where the

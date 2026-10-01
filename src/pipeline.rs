@@ -21,6 +21,10 @@ pub struct BuildOutcome {
     pub catch_all_retained: usize,
     pub regex_rules: usize,
     /// Rules sampled by the self-consistency gate.
+    /// Requests blocked by both the upstream union and the built list.
+    pub regression_identical: usize,
+    /// Requests the built list blocks that upstream does not.
+    pub regression_gained: usize,
     pub verified_sampled: usize,
     /// Fraction of sampled rules that blocked their own pattern, 0.0 when the
     /// gate was skipped.
@@ -70,6 +74,10 @@ impl Report {
         }
         s.push_str(&format!("  deduplicated         {}\n", o.deduped));
         s.push_str(&format!(
+            "  vs upstream          {} identical, {} gained, 0 lost\n",
+            o.regression_identical, o.regression_gained
+        ));
+        s.push_str(&format!(
             "  catch-all retained   {}\n",
             o.catch_all_retained
         ));
@@ -96,6 +104,9 @@ pub struct Accepted {
 /// Runs the whole pipeline.
 /// One source list after classification: the rules it contributed plus its stats.
 struct Parsed {
+    /// Verbatim source text, kept so the regression check can build the raw
+    /// upstream union the built list is measured against.
+    raw: String,
     kept: Vec<Accepted>,
     outcome: SourceOutcome,
     catch_all: usize,
@@ -209,6 +220,7 @@ pub fn run(
             }
 
             Parsed {
+                raw: text,
                 kept,
                 outcome: SourceOutcome {
                     name: list.name.clone(),
@@ -269,6 +281,26 @@ pub fn run(
         built.build_micros
     );
 
+    // Stage 3a: regression check against the raw upstream union. SuperBrave only
+    // removes rules the engine rejects, so it must never block less than the
+    // upstream lists do on a shared request corpus.
+    let upstream = crate::verify::regression_vs_upstream(&upstream_union(&parsed), &built);
+    log::info!(
+        "regression vs upstream: {} identical, {} gained, {} LOST",
+        upstream.identical,
+        upstream.gained,
+        upstream.lost.len()
+    );
+    for (url, source, kind) in &upstream.lost {
+        log::error!("lost upstream block on {} ({source}, {kind})", url);
+    }
+    if !upstream.lost.is_empty() {
+        anyhow::bail!(
+            "{} request(s) blocked upstream are not blocked by SuperBrave",
+            upstream.lost.len()
+        );
+    }
+
     // Stage 3b: self-consistency. Rules that parse but can never match are the
     // main silent-failure mode, so sample the emitted list and check each rule
     // blocks the request its own pattern describes.
@@ -292,7 +324,16 @@ pub fn run(
     if !options.emit {
         log::info!("emit disabled; stopping after verification");
         return Ok(Report {
-            outcome: outcome_from(&parsed, &merged, n, c, deduped, check, started),
+            outcome: outcome_from(Totals {
+                parsed: &parsed,
+                merged: &merged,
+                network: n,
+                cosmetic: c,
+                deduped,
+                check,
+                regression: upstream,
+                started,
+            }),
         });
     }
 
@@ -314,25 +355,48 @@ pub fn run(
     }
 
     Ok(Report {
-        outcome: outcome_from(&parsed, &merged, n, c, deduped, check, started),
+        outcome: outcome_from(Totals {
+            parsed: &parsed,
+            merged: &merged,
+            network: n,
+            cosmetic: c,
+            deduped,
+            check,
+            regression: upstream,
+            started,
+        }),
     })
 }
 
 type ParsedList = Vec<Parsed>;
 
-fn outcome_from(
-    parsed: &ParsedList,
-    merged: &[Accepted],
-    n: usize,
-    c: usize,
+/// Counters gathered while running, assembled into the reported outcome at the end.
+struct Totals<'a> {
+    parsed: &'a ParsedList,
+    merged: &'a [Accepted],
+    network: usize,
+    cosmetic: usize,
     deduped: usize,
     check: crate::verify::SelfCheck,
+    regression: crate::verify::Regression,
     started: Instant,
-) -> BuildOutcome {
+}
+
+fn outcome_from(t: Totals<'_>) -> BuildOutcome {
+    let Totals {
+        parsed,
+        merged,
+        network,
+        cosmetic,
+        deduped,
+        check,
+        regression,
+        started,
+    } = t;
     BuildOutcome {
         sources: parsed.iter().map(|p| p.outcome.clone()).collect(),
-        emitted_network: n,
-        emitted_cosmetic: c,
+        emitted_network: network,
+        emitted_cosmetic: cosmetic,
         dropped_unsupported: parsed.iter().map(|p| p.outcome.unsupported).sum(),
         repaired_equivalent: merged.iter().filter(|a| a.origin == "repaired").count(),
         repaired_behaviour_change: merged
@@ -342,10 +406,23 @@ fn outcome_from(
         deduped,
         catch_all_retained: parsed.iter().map(|p| p.catch_all).sum(),
         regex_rules: parsed.iter().map(|p| p.regex_rules).sum(),
+        regression_identical: regression.identical,
+        regression_gained: regression.gained,
         verified_sampled: check.sampled,
         self_consistency: check.ratio(),
         elapsed_ms: started.elapsed().as_millis(),
     }
+}
+
+/// Concatenates the raw upstream text so it can be compared against the built list.
+fn upstream_union(parsed: &[Parsed]) -> String {
+    let total: usize = parsed.iter().map(|p| p.raw.len() + 1).sum();
+    let mut s = String::with_capacity(total);
+    for p in parsed {
+        s.push_str(&p.raw);
+        s.push('\n');
+    }
+    s
 }
 
 fn engine_describe(cfg: &EngineConfig) -> String {

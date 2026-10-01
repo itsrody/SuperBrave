@@ -5,7 +5,7 @@
 ! Homepage: https://github.com/superbrave/SuperBrave
 ! Generator: superbrave/0.1.0
 ! Engine-Features: full-regex-handling,content-blocking,css-validation
-! Network-Rules: 137627
+! Network-Rules: 137605
 ! Cosmetic-Rules: 60469
 ! Licence: see LICENCE.md -- derived from EasyList, uBlock Origin and AdGuard lists
 
@@ -2224,7 +2224,6 @@ _800x80_
 ||6j296m8k.de^
 ||6jypv36yyh2jj54jg.cfd^
 ||6lmcqj7d.xyz^
-||6mcw92wirhxnnqcw2.rest^
 ||6nmlkpk6irguvekw5.cfd^
 ||6opo.com^
 ||6ped2nd3yp.com^
@@ -7887,7 +7886,6 @@ _800x80_
 ||ceasepancreas.com^
 ||ceasingoxanate.shop^
 ||ceaslessivorygoats.com^
-||cebidaerewax.cyou^
 ||cebineviewingvaluta.cfd^
 ||cebjrqvyienhy.site^
 ||cebnovoscizrj.online^
@@ -8962,7 +8960,6 @@ _800x80_
 ||consistentsoup.com^
 ||consistspouchrowan.com^
 ||consolevolcano.com^
-||consolskeyways.qpon^
 ||constantlyauthoritativegradually.com^
 ||constbezzant.com^
 ||constellationexclusion.com^
@@ -11863,7 +11860,6 @@ _800x80_
 ||dudleyrevolutioninconsistent.com^
 ||dudppbtqgdvam.site^
 ||dudragonitean.com^
-||duefulcry.cyou^
 ||dueimmigratedebit.com^
 ||dueledmaidkin.cyou^
 ||duendesmolest.com^
@@ -12711,7 +12707,6 @@ _800x80_
 ||embraidexcused.qpon^
 ||embroiderynaturalistsfighter.com^
 ||embruegeobios.qpon^
-||embryoncubbyu.cfd^
 ||embwmpt.com^
 ||emceevicilin.cyou^
 ||emdnriustcngd.website^
@@ -16607,7 +16602,6 @@ _800x80_
 ||gwinyilyerkes.site^
 ||gwiryqwgylcdq.online^
 ||gwjmfxgdooxdd.website^
-||gwlhonuisy.com^
 ||gwngokhbfqybo.space^
 ||gwrqslmseajux.site^
 ||gwrsyyrghwnuo.space^
@@ -16708,7 +16702,6 @@ _800x80_
 ||gzoznnypuhodq.site^
 ||gzrlncudpybtf.site^
 ||gzugqzgsfr.com^
-||gzuibprpbazla.site^
 ||gzvknriwrcwtt.website^
 ||gzynllfiy.com^
 ||h12-media.com^
@@ -17919,7 +17912,6 @@ _800x80_
 ||humongoustemporary.com^
 ||humongouswoman.pro^
 ||humont.xyz^
-||humorercymblin.cyou^
 ||humoristshamrockzap.com^
 ||humorousorderedeconomics.com^
 ||humpdecompose.com^
@@ -19646,7 +19638,6 @@ _800x80_
 ||jdssykdlwygwj.site^
 ||jdt8.net^
 ||jdufgkfwdygge.site^
-||jdulgygsp.com^
 ||jdvhjqphbpjjd.space^
 ||jdvnpqubqzzae.site^
 ||jdwqsewrbvnnt.website^
@@ -21968,7 +21959,6 @@ _800x80_
 ||leptabalarao.qpon^
 ||leqfrrxllfeft.online^
 ||leqrcirjuawwi.site^
-||lererecocks.qpon^
 ||leschepaeonia.cfd^
 ||lesjhcskvsgjw.site^
 ||lesmgdfltsuig.com^
@@ -22308,7 +22298,6 @@ _800x80_
 ||liyzeqeyezorg.online^
 ||lizardcalming.cyou^
 ||lizardvibrateencumbrance.com^
-||ljaqymbzwuqgi.site^
 ||ljbqfyfrafzla.space^
 ||ljbwzlmbavqrm.top^
 ||ljbwzlmbavwlv.top^
@@ -23294,7 +23283,6 @@ _800x80_
 ||marrysschoche.cyou^
 ||marshalcurve.com^
 ||marshcooperative.com^
-||marsiancliqueevovae.cyou^
 ||martencrippled.com^
 ||martenforthwith.com^
 ||martialrecessioninformant.com^
@@ -23537,7 +23525,6 @@ _800x80_
 ||medichalfwaypoetry.com^
 ||medicimatico.cyou^
 ||medicineprehistoriclesson.com^
-||mediclunted.cyou^
 ||medievalkin.com^
 ||mediocrecliffschangeless.com^
 ||mediocremoreoverbalcony.com^
@@ -23794,7 +23781,6 @@ _800x80_
 ||midironpabularbhaga.qpon^
 ||midisalias.qpon^
 ||midlegsasunder.cfd^
-||midlegsquisle.cyou^
 ||midmainargsignory.cyou^
 ||midmornfratch.cyou^
 ||midnighttraditionally.com^
@@ -24149,7 +24135,6 @@ _800x80_
 ||modern-crew.com^
 ||modernjingleshoes.com^
 ||modestriver.com^
-||modffcpilyqim.space^
 ||modificationdispatch.com^
 ||modifiedfloatvest.com^
 ||modoro360.com^
@@ -24756,7 +24741,6 @@ _800x80_
 ||mxryddheuisve.store^
 ||mxtkypzdwdrzl.site^
 ||mxuycwvhktmuh.online^
-||mxwywuywnyerj.site^
 ||mxxebzivnzurw.space^
 ||mxxektnycqzwi.website^
 ||mxxyyultzqkuf.website^
@@ -25857,7 +25841,6 @@ _800x80_
 ||nsbihtjcnyujz.online^
 ||nscgizlofgvnr.online^
 ||nsdsvc.com^
-||nsdtmolaigbus.space^
 ||nsdzyfrgyhzpe.online^
 ||nsehuvyjverbe.website^
 ||nsepelunpkhet.website^
@@ -26469,7 +26452,6 @@ _800x80_
 ||ogcmfzvcicpon.site^
 ||ogdauedbftzmt.online^
 ||ogdbgitofqmxv.space^
-||ogebpkvccukilul.com^
 ||ogekhugcnbvga.online^
 ||ogfbb.net^
 ||ogffa.net^
@@ -32344,7 +32326,6 @@ _800x80_
 ||rvguayebpxpiv.website^
 ||rvguihiplfscu.website^
 ||rvhbufmwvafov.site^
-||rvjoiedxxq.com^
 ||rvlcabsakhoog.space^
 ||rvmhvgrtdzjof.space^
 ||rvnpdistgmlim.site^
@@ -35354,7 +35335,6 @@ _800x80_
 ||svrgcqgtpe.com^
 ||svstfplolhlll.website^
 ||svsykpaqyusra.site^
-||svtdtovikyqamy.com^
 ||svvetmlkp.com^
 ||svvgztohvzxoj.online^
 ||svxdlllvtirib.site^
@@ -37125,7 +37105,6 @@ _800x80_
 ||tsghvqmfcxzfn.space^
 ||tshvyovuuyxyh.site^
 ||tsiwoulukdlike.org^
-||tsksseenie.qpon^
 ||tsml.fun^
 ||tsmnxxfscanxi.website^
 ||tsmvsqtykbeaq.space^
@@ -42960,7 +42939,6 @@ _800x80_
 ||zakjvvjpjzesp.store^
 ||zaktucdkuvw.com^
 ||zakuskananda.cyou^
-||zakuskaorlopsaweto.qpon^
 ||zakuskityauve.qpon^
 ||zalrurtauba.net^
 ||zamabholqonh.in^
