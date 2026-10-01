@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 #[derive(Parser, Debug)]
@@ -39,14 +39,52 @@ enum Cmd {
     Analyze,
 }
 
-#[derive(clap::Args, Debug, Default, Clone)]
+#[derive(clap::Args, Debug, Clone, Default)]
 struct BuildArgs {
-    /// Also emit a FlatBuffers-serialized engine blob.
+    /// Also emit a FlatBuffers-serialized engine blob alongside the list.
     #[arg(long)]
     engine_blob: bool,
-    /// Run the behavioural equivalence suite before writing output.
-    #[arg(long, default_value_t = true)]
-    verify: bool,
+    /// Skip the self-consistency gate that refuses to emit an unverified list.
+    #[arg(long)]
+    no_verify: bool,
+}
+
+impl BuildArgs {
+    fn options(&self) -> superbrave::pipeline::Options {
+        superbrave::pipeline::Options {
+            verify: !self.no_verify,
+            emit: true,
+            engine_blob: self.engine_blob,
+        }
+    }
+}
+
+fn fetch_all(cfg: &superbrave::config::Config, cache_dir: &Path) -> Result<String> {
+    use superbrave::fetch::Fetcher;
+    let f = superbrave::fetch::HttpFetcher::new(Duration::from_secs(60));
+    let mut lines = Vec::new();
+    for l in cfg.enabled_lists() {
+        match f.fetch(l, cache_dir) {
+            Ok(superbrave::fetch::FetchOutcome::Fresh(s)) => lines.push(format!(
+                "fetched {} ({} bytes, sha256 {})",
+                s.name,
+                s.bytes,
+                &s.sha256[..16]
+            )),
+            Ok(superbrave::fetch::FetchOutcome::NotModified(s)) => {
+                lines.push(format!("unchanged {} (sha256 {})", s.name, &s.sha256[..16]))
+            }
+            Err(e) => lines.push(format!("FAILED {}: {e}", l.name)),
+        }
+    }
+    for l in &lines {
+        if l.starts_with("FAILED") {
+            log::error!("{l}");
+        } else {
+            log::info!("{l}");
+        }
+    }
+    Ok(lines.join("\n"))
 }
 
 fn main() -> Result<()> {
@@ -76,11 +114,32 @@ fn main() -> Result<()> {
                     Err(e) => log::error!("{}: {e}", l.name),
                 }
             }
-            let _ = force;
+            if force {
+                log::info!("--force: ignoring cached validators");
+            }
         }
-        Cmd::Analyze | Cmd::Build(_) | Cmd::All(_) => {
-            let out = superbrave::pipeline::run(&cfg, &cli.cache_dir, &cli.output_dir, None)?;
-            println!("{}", out.summary());
+        Cmd::Build(args) | Cmd::All(args) => {
+            if matches!(cli.command, Some(Cmd::All(_))) {
+                let out = fetch_all(&cfg, &cli.cache_dir)?;
+                println!("{}", out);
+            }
+            let report =
+                superbrave::pipeline::run(&cfg, &cli.cache_dir, &cli.output_dir, args.options())?;
+            println!("{}", report.summary());
+        }
+        Cmd::Analyze => {
+            // Classify and verify exactly as a build would, but write nothing.
+            let report = superbrave::pipeline::run(
+                &cfg,
+                &cli.cache_dir,
+                &cli.output_dir,
+                superbrave::pipeline::Options {
+                    verify: true,
+                    emit: false,
+                    engine_blob: false,
+                },
+            )?;
+            println!("{}", report.summary());
         }
     }
     Ok(())

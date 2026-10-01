@@ -24,7 +24,7 @@ struct ListHeader<'a> {
 }
 
 pub struct Emitter {
-    cfg: &'static OutputConfig,
+    cfg: OutputConfig,
     features: String,
     expiry_days: u8,
     title: &'static str,
@@ -33,14 +33,13 @@ pub struct Emitter {
 }
 
 impl Emitter {
-    pub fn new(cfg: &OutputConfig, features: &str) -> Self {
-        // Leak the config for the process lifetime: the emitter is a single
-        // per-build object and this keeps the write path allocation-free.
-        let cfg: &'static OutputConfig = Box::leak(Box::new(cfg.clone()));
+    pub fn new(cfg: &OutputConfig, features: &str, engine_blob: bool) -> Self {
+        let mut cfg = cfg.clone();
+        cfg.emit_engine_blob = engine_blob;
         Self {
+            expiry_days: cfg.header_expiry_days,
             cfg,
             features: features.to_string(),
-            expiry_days: cfg.header_expiry_days,
             title: "SuperBrave",
             version: env!("CARGO_PKG_VERSION"),
             homepage: "https://github.com/superbrave/SuperBrave",

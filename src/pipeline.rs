@@ -20,6 +20,11 @@ pub struct BuildOutcome {
     pub deduped: usize,
     pub catch_all_retained: usize,
     pub regex_rules: usize,
+    /// Rules sampled by the self-consistency gate.
+    pub verified_sampled: usize,
+    /// Fraction of sampled rules that blocked their own pattern, 0.0 when the
+    /// gate was skipped.
+    pub self_consistency: f64,
     pub elapsed_ms: u128,
 }
 
@@ -69,6 +74,13 @@ impl Report {
             o.catch_all_retained
         ));
         s.push_str(&format!("  regex rules          {}\n", o.regex_rules));
+        if o.verified_sampled > 0 {
+            s.push_str(&format!(
+                "  self-consistency     {:.1}% of {} sampled\n",
+                o.self_consistency * 100.0,
+                o.verified_sampled
+            ));
+        }
         s
     }
 }
@@ -82,23 +94,45 @@ pub struct Accepted {
 }
 
 /// Runs the whole pipeline.
+/// One source list after classification: the rules it contributed plus its stats.
+struct Parsed {
+    kept: Vec<Accepted>,
+    outcome: SourceOutcome,
+    catch_all: usize,
+    regex_rules: usize,
+}
+
+/// Knobs the CLI exposes. Kept explicit so CI and local runs take the same path.
+#[derive(Debug, Clone, Copy)]
+pub struct Options {
+    /// Run the self-consistency gate. Off means emit without checking.
+    pub verify: bool,
+    /// Write the list and report to disk. Off means classify and verify only.
+    pub emit: bool,
+    /// Also write the serialized engine blob.
+    pub engine_blob: bool,
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            verify: true,
+            emit: true,
+            engine_blob: false,
+        }
+    }
+}
+
 pub fn run(
     cfg: &Config,
     cache_dir: &Path,
     output_dir: &Path,
-    _emit: Option<()>,
+    options: Options,
 ) -> anyhow::Result<Report> {
     let started = Instant::now();
     let lists: Vec<_> = cfg.enabled_lists().cloned().collect();
 
     // Stage 1: parse + classify each source in parallel.
-    struct Parsed {
-        kept: Vec<Accepted>,
-        outcome: SourceOutcome,
-        catch_all: usize,
-        regex_rules: usize,
-    }
-
     let parsed: Vec<Parsed> = lists
         .par_iter()
         .enumerate()
@@ -248,15 +282,26 @@ pub fn run(
     for m in &check.misses {
         log::warn!("never matches: {m}");
     }
-    if n > 0 && check.sampled > 0 && check.ratio() < 0.5 {
+    if options.verify && n > 0 && check.sampled > 0 && check.ratio() < 0.5 {
         anyhow::bail!(
             "only {:.1}% of sampled rules block their own pattern; refusing to emit",
             check.ratio() * 100.0
         );
     }
 
+    if !options.emit {
+        log::info!("emit disabled; stopping after verification");
+        return Ok(Report {
+            outcome: outcome_from(&parsed, &merged, n, c, deduped, check, started),
+        });
+    }
+
     // Stage 4: emit.
-    let emitter = Emitter::new(&cfg.output, &engine_describe(&cfg.engine));
+    let emitter = Emitter::new(
+        &cfg.output,
+        &engine_describe(&cfg.engine),
+        options.engine_blob,
+    );
     let artifacts = emitter.write(output_dir, &net_text, &cos_text, &built)?;
     for a in &artifacts {
         log::info!("wrote {}", a.path.display());
@@ -268,7 +313,23 @@ pub fn run(
         )?;
     }
 
-    let outcome = BuildOutcome {
+    Ok(Report {
+        outcome: outcome_from(&parsed, &merged, n, c, deduped, check, started),
+    })
+}
+
+type ParsedList = Vec<Parsed>;
+
+fn outcome_from(
+    parsed: &ParsedList,
+    merged: &[Accepted],
+    n: usize,
+    c: usize,
+    deduped: usize,
+    check: crate::verify::SelfCheck,
+    started: Instant,
+) -> BuildOutcome {
+    BuildOutcome {
         sources: parsed.iter().map(|p| p.outcome.clone()).collect(),
         emitted_network: n,
         emitted_cosmetic: c,
@@ -281,9 +342,10 @@ pub fn run(
         deduped,
         catch_all_retained: parsed.iter().map(|p| p.catch_all).sum(),
         regex_rules: parsed.iter().map(|p| p.regex_rules).sum(),
+        verified_sampled: check.sampled,
+        self_consistency: check.ratio(),
         elapsed_ms: started.elapsed().as_millis(),
-    };
-    Ok(Report { outcome })
+    }
 }
 
 fn engine_describe(cfg: &EngineConfig) -> String {

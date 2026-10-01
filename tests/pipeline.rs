@@ -27,7 +27,13 @@ fn fixture_config(dir: &Path) -> Config {
 
 fn build(dir: &Path) -> String {
     let cfg = fixture_config(dir);
-    let report = superbrave::pipeline::run(&cfg, &dir.join("cache"), dir, None).unwrap();
+    let report = superbrave::pipeline::run(
+        &cfg,
+        &dir.join("cache"),
+        dir,
+        superbrave::pipeline::Options::default(),
+    )
+    .unwrap();
     assert!(report.outcome.emitted_network > 0, "expected network rules");
     let list = fs::read_to_string(dir.join("SuperBrave.txt")).unwrap();
     assert!(list.starts_with("[Adblock Plus 2.0]"), "missing ABP header");
@@ -90,4 +96,41 @@ fn report_is_written() {
     let report = fs::read_to_string(dir.join("report.json")).unwrap();
     assert!(report.contains("fixture"));
     assert!(report.contains("by_reason"));
+}
+
+#[test]
+fn analyze_writes_nothing() {
+    let dir = tempdir("analyze");
+    let cfg = fixture_config(&dir);
+    superbrave::pipeline::run(
+        &cfg,
+        &dir.join("cache"),
+        &dir,
+        superbrave::pipeline::Options {
+            verify: true,
+            emit: false,
+            engine_blob: false,
+        },
+    )
+    .unwrap();
+    assert!(
+        !dir.join("SuperBrave.txt").exists(),
+        "analyze must not emit"
+    );
+}
+
+#[test]
+fn self_consistency_ratio_is_reported() {
+    let dir = tempdir("ratio");
+    let cfg = fixture_config(&dir);
+    let report = superbrave::pipeline::run(
+        &cfg,
+        &dir.join("cache"),
+        &dir,
+        superbrave::pipeline::Options::default(),
+    )
+    .unwrap();
+    assert!(report.outcome.verified_sampled > 0);
+    assert_eq!(report.outcome.self_consistency, 1.0);
+    assert!(report.summary().contains("self-consistency"));
 }
