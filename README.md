@@ -1,0 +1,86 @@
+# SuperBrave
+
+Builds `SuperBrave.txt`, a filter list validated against the `adblock` crate that
+Brave uses. Every rule is either proven to compile and match in that engine,
+repaired and re-verified, or dropped with a recorded reason.
+
+## Usage
+
+```
+cargo run --release -- fetch    # download upstream lists into .cache/
+cargo run --release -- build    # classify, verify, and emit SuperBrave.txt
+cargo run --release -- all      # both
+```
+
+Sources and policy live in `config.toml`. List order is merge priority: earlier
+lists win on duplicate rules.
+
+## How it works
+
+1. **Fetch.** `ureq` with ETag/Last-Modified revalidation, SHA-256 provenance, and
+   gzip decoding. `src/fetch/mod.rs`.
+2. **Classify.** Each line goes through `adblock::lists::parse_filter` and lands in
+   one of four buckets: verified, rewritable, unsupported, ignored. Rejection
+   reasons are mapped from the engine's own error enums, so the report says
+   *why* a rule was dropped. `src/parse/mod.rs`.
+3. **Repair.** Only rules that parse but can never match are candidates. Each
+   repair is checked by replaying a fixed probe corpus plus requests derived from
+   the rule's own pattern, and comparing outcomes against the original.
+   `src/rewrite/mod.rs`.
+4. **Merge and dedupe.** Parallel per source, then first-wins on exact text.
+5. **Verify.** The merged list is compiled into a real engine, then sampled: each
+   sampled rule must block a request built from its own pattern. A build that
+   fails this gate is not written. `src/verify.rs`.
+6. **Emit.** Header, split network/cosmetic sections, per-source JSON report.
+
+`--output-dir` defaults to the repo root so `SuperBrave.txt` lands where the
+workflow and raw URLs expect it.
+
+## What the engine actually does
+
+These were measured against `adblock` 0.13.3, not assumed. The ones that changed
+design decisions:
+
+- **`||host^/path` never matches.** The caret is consumed as a separator and the
+  following `/` then requires a second one, which no real URL has. Repaired to
+  `||host/path`. `||host^ads` is fine and left alone.
+- **`$to=` is not inert.** It makes a rule redirect-only and suppresses blocking
+  entirely: `/x.js` blocks, `/x.js$to=t` does not. Stripping the option would turn
+  a non-blocking rule into a blocking one, so those rules are kept verbatim.
+  (An earlier assumption here was wrong and was corrected by measurement.)
+- **`$important,$removeparam=` blocks nothing.** The removeparam branch runs first
+  and returns early. Split into a blocking rule plus the rewrite.
+- **`||host^` matches documents**, `||host` does not, so adding a caret can widen
+  behaviour.
+- **Rule order has no effect.** Matching is token-bucketed by hash, so sorting or
+  shuffling the input is not an optimization. Only the engine's own optimizer
+  helps, roughly 2083 ns versus 2682 ns per match.
+- **Catch-all rules are cheap but broad.** 1091 rules fall in the token-0 bucket.
+  Dropping them roughly halves match time but changes coverage, so they are kept.
+
+See `tests/` for these encoded as assertions.
+
+## Layout
+
+| Path | Role |
+| --- | --- |
+| `src/config/` | config, source registry, engine policy |
+| `src/fetch/` | HTTP, caching, provenance |
+| `src/parse/` | engine-backed classification |
+| `src/rewrite/` | repair candidates and differential verification |
+| `src/verify.rs` | compilation gate and self-consistency sampling |
+| `src/output/` | emitter |
+| `src/pipeline.rs` | orchestration |
+
+## Caveats
+
+- `SuperBrave.txt` is a build artifact that is committed so it can be consumed
+directly. `report.json` is committed alongside it. Both are regenerated weekly by
+the workflow; review the diff before pushing an update.
+
+`SuperBrave.txt` is a derived work. Redistribution terms are unresolved; see
+  `LICENCE.md` before publishing.
+- No scriptlet or redirect resources are bundled, so `$redirect=` and `##+js()`
+  rules parse but cannot take effect.
+- `config.toml` engine flags are assertions about the compiled binary, not
+  switches. They record what the output was validated against.

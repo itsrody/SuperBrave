@@ -1,0 +1,129 @@
+[
+  {
+    "name": "easylist",
+    "url": "https://easylist.to/easylist/easylist.txt",
+    "license": "GPL-3.0-or-later",
+    "lines": 78492,
+    "network": 50630,
+    "cosmetic": 24619,
+    "unsupported": 2967,
+    "ignored": 276,
+    "rewritable": 0,
+    "by_reason": {
+      "csp-with-content-type": 1,
+      "invalid-css-selector": 6,
+      "unrecognised-option": 2960
+    }
+  },
+  {
+    "name": "easyprivacy",
+    "url": "https://easylist.to/easylist/easyprivacy.txt",
+    "license": "GPL-3.0-or-later",
+    "lines": 57018,
+    "network": 56209,
+    "cosmetic": 34,
+    "unsupported": 3,
+    "ignored": 772,
+    "rewritable": 0,
+    "by_reason": {
+      "empty-redirect": 1,
+      "html-filtering-unsupported": 1,
+      "negated-document": 1
+    }
+  },
+  {
+    "name": "ublock-filters",
+    "url": "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
+    "license": "GPL-3.0-or-later",
+    "lines": 10894,
+    "network": 1644,
+    "cosmetic": 4296,
+    "unsupported": 181,
+    "ignored": 4773,
+    "rewritable": 0,
+    "by_reason": {
+      "csp-with-content-type": 1,
+      "empty-removeparam": 1,
+      "generic-unhide": 4,
+      "html-filtering-unsupported": 30,
+      "invalid-scriptlet-args": 11,
+      "procedural-multiple-selectors": 2,
+      "unrecognised-option": 132
+    }
+  },
+  {
+    "name": "ublock-privacy",
+    "url": "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt",
+    "license": "GPL-3.0-or-later",
+    "lines": 3361,
+    "network": 1169,
+    "cosmetic": 309,
+    "unsupported": 291,
+    "ignored": 1592,
+    "rewritable": 0,
+    "by_reason": {
+      "cosmetic-unsupported-syntax": 2,
+      "csp-with-content-type": 1,
+      "empty-redirect": 1,
+      "empty-removeparam": 5,
+      "html-filtering-unsupported": 14,
+      "removeparam-regex-unsupported": 4,
+      "unrecognised-option": 264
+    }
+  },
+  {
+    "name": "ublock-badware",
+    "url": "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt",
+    "license": "GPL-3.0-or-later",
+    "lines": 6552,
+    "network": 4194,
+    "cosmetic": 137,
+    "unsupported": 63,
+    "ignored": 2158,
+    "rewritable": 0,
+    "by_reason": {
+      "html-filtering-unsupported": 1,
+      "unrecognised-option": 62
+    }
+  },
+  {
+    "name": "ublock-quick-fixes",
+    "url": "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/quick-fixes.txt",
+    "license": "GPL-3.0-or-later",
+    "lines": 596,
+    "network": 112,
+    "cosmetic": 243,
+    "unsupported": 41,
+    "ignored": 200,
+    "rewritable": 0,
+    "by_reason": {
+      "cosmetic-unsupported-syntax": 2,
+      "html-filtering-unsupported": 6,
+      "invalid-scriptlet-args": 1,
+      "unrecognised-option": 32
+    }
+  },
+  {
+    "name": "adguard-base",
+    "url": "https://filters.adtidy.org/extension/ublock/filters/2.txt",
+    "license": "GPL-3.0-or-later",
+    "lines": 147843,
+    "network": 72668,
+    "cosmetic": 55538,
+    "unsupported": 3708,
+    "ignored": 15929,
+    "rewritable": 0,
+    "by_reason": {
+      "cosmetic-unsupported-syntax": 12,
+      "csp-with-content-type": 1,
+      "empty-removeparam": 6,
+      "generic-action": 2,
+      "generic-unhide": 6,
+      "invalid-css-selector": 556,
+      "invalid-scriptlet-args": 6,
+      "match-case-without-full-regex": 2,
+      "removeparam-regex-unsupported": 2,
+      "unrecognised-option": 3115
+    }
+  }
+]

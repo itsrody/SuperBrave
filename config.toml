@@ -1,0 +1,66 @@
+# SuperBrave build configuration.
+#
+# List order defines merge priority: earlier lists win when two lists carry the
+# same rule. `enabled` defaults to true; set it false to keep a list in the file
+# but exclude it from a build.
+
+[[lists]]
+name = "easylist"
+url = "https://easylist.to/easylist/easylist.txt"
+license = "GPL-3.0-or-later"
+format = "standard"
+
+[[lists]]
+name = "easyprivacy"
+url = "https://easylist.to/easylist/easyprivacy.txt"
+license = "GPL-3.0-or-later"
+format = "standard"
+
+[[lists]]
+name = "ublock-filters"
+url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt"
+license = "GPL-3.0-or-later"
+format = "standard"
+
+[[lists]]
+name = "ublock-privacy"
+url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt"
+license = "GPL-3.0-or-later"
+format = "standard"
+
+[[lists]]
+name = "ublock-badware"
+url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt"
+license = "GPL-3.0-or-later"
+format = "standard"
+
+[[lists]]
+name = "ublock-quick-fixes"
+url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/quick-fixes.txt"
+license = "GPL-3.0-or-later"
+format = "standard"
+
+[[lists]]
+name = "adguard-base"
+url = "https://filters.adtidy.org/extension/ublock/filters/2.txt"
+license = "GPL-3.0-or-later"
+format = "standard"
+
+[output]
+filename = "SuperBrave.txt"
+emit_reports = true
+emit_engine_blob = false
+header_expiry_days = 4
+
+[engine]
+# Must mirror the features compiled into `adblock`. These are assertions, not
+# switches: turning one off here will not remove it from the binary.
+content_blocking = true
+full_regex = true
+resources = false
+css_validation = true
+
+# Regex rules are the single largest match-time cost. Reject drops them from the
+# list entirely, which changes coverage; allow keeps them.
+[engine.regex]
+policy = "allow"

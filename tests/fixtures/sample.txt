@@ -1,0 +1,16 @@
+[Adblock Plus 2.0]
+! Title: fixture
+! sample
+||ads.tracker.test^
+||cdn.tracker.test^$script,third-party
+/banner.gif$image
+/pixel.png$domain=shop.test
+@@||cdn.tracker.test^$domain=shop.test
+example.test##.ad-slot
+example.test#@#.ad-slot
+!#if ext_ublock
+||conditional.test^
+!#endif
+||popup.tracker.test^$popup
+||a.com^/never-matches
+/only/$to=tracker.test

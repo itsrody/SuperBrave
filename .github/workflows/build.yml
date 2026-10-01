@@ -1,0 +1,60 @@
+name: build
+
+on:
+  schedule:
+    # Upstream lists are updated continuously; a weekly build keeps SuperBrave.txt
+    # current without publishing on every upstream commit.
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: superbrave-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --all-targets
+
+      - name: Fetch upstream lists
+        run: cargo run --release -- fetch
+
+      - name: Build SuperBrave.txt
+        run: cargo run --release -- build
+
+      - name: Show what changed in the list
+        run: |
+          if git diff --quiet -- SuperBrave.txt; then
+            echo "list is unchanged from the committed copy"
+          else
+            git diff --stat -- SuperBrave.txt
+            echo "::warning::SuperBrave.txt differs from the committed copy; review and commit"
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: superbrave
+          path: |
+            SuperBrave.txt
+            report.json
+          if-no-files-found: error

@@ -1,0 +1,28 @@
+[package]
+name = "superbrave"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+description = "CLI tool to generate Brave's adblock-rust verified filter list (SuperBrave.txt)"
+authors = ["SuperBrave Contributors"]
+
+[dependencies]
+adblock = { version = "0.13.3", features = ["content-blocking", "resource-assembler", "css-validation", "embedded-domain-resolver", "full-regex-handling"] }
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive", "env"] }
+env_logger = "0.11"
+flate2 = "1.0"
+log = "0.4"
+rayon = "1.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.11"
+thiserror = "1.0"
+toml = "0.8"
+ureq = { version = "2.10", default-features = false, features = ["tls", "gzip", "brotli"] }
+url = "2.5"
+memchr = "2.7"
+itertools = "0.13"
+
+[dev-dependencies]
+pretty_assertions = "1.4"
